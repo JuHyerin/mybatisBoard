@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" 
+xmlns="http://www.w3.org/1999/xhtml" 
+xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Post List</title>
+</head>
+<body>
+    <table border="1">
+        <thead>
+            <th>아이디</th>
+            <th>제목</th>
+            <th>내용</th>
+            <th>작성일</th>
+        </thead>    
+        <tbody>
+            <tr style="cursor:pointer" th:onclick="@{/posts/details}" th:each="post:${posts}" th:object="${post}">
+                <td th:text="*{postId}">title</td>
+                <td th:text="*{title}">title</td>
+                <td th:text="*{contents}">contents</td>
+                <td th:text="*{createdAt}">writer</td>
+            </tr>
+    </tbody>
+    </table> 
+    
+    <div>
+        <a th:href="@{/posts/create}">게시물 작성</a>
+        <!-- <button type="button" th:onclick="'location.href=\''+@{/posts/create}'">게시물 작성</button> -->
+    </div>
+
+    <div th:with="start=${paging.startPageNo}, end=${paging.endPageNo}" th:object="${paging}">
+        <a th:if="${paging.pageNo}>1" th:href="@{/posts/list(page=1)}">처음</a>
+         
+        <a th:if="${paging.startPageNo}!=1" th:href="@{/posts/list(page=${paging.startPageNo-1})}">이전</a>
+
+        <th:block th:each="page:${#numbers.sequence(start, end)}">
+            <a th:text="${page}" th:href="@{/posts/list(page=${page})}">pageNo</a>
+        </th:block> 
+
+        <a th:if="*{endPageNo}!=*{totalPages}" th:href="@{/posts/list(page=${paging.endPageNo+1})}">이후</a>
+
+        <a th:if="${paging.pageNo}!=${paging.totalPages}" th:href="@{/posts/list(page=${paging.totalPages})}">끝</a>
+    </div>
+</body>
+<script type="text/javascript"></script>
+</html>
