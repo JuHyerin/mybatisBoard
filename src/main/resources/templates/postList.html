@@ -3,23 +3,39 @@
 xmlns="http://www.w3.org/1999/xhtml" 
 xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="UTF-8">
-<title>Post List</title>
+    <meta charset="UTF-8">
+    <title>Post List</title>
+    <script>
+        function fn_detail(postId){
+            location.href='/posts/detail?postId='+postId;
+        }
+        function fn_update(postId){
+           location.href='/posts/update?postId='+postId;
+        }
+        function fn_delete(postId){
+            location.href='/posts/delete?postId='+postId;
+        }
+    </script>
 </head>
 <body>
     <table border="1">
         <thead>
             <th>아이디</th>
             <th>제목</th>
-            <th>내용</th>
             <th>작성일</th>
+            <th>수정 및 삭제</th>
         </thead>    
         <tbody>
-            <tr style="cursor:pointer" th:onclick="@{/posts/details}" th:each="post:${posts}" th:object="${post}">
-                <td th:text="*{postId}">title</td>
-                <td th:text="*{title}">title</td>
-                <td th:text="*{contents}">contents</td>
+            <!-- <tr style="cursor:pointer"  th:onclick="|javascript:location.href=@{'/posts/detail'}|" th:each="post:${posts}" th:object="${post}"> -->
+                <tr style="cursor:pointer" th:each="post:${posts}" th:object="${post}">   
+                <td th:text="*{postId}">postId</td>
+                <td th:onclick="|javascript:fn_detail(*{postId})|" th:text="*{title}">title</td>
                 <td th:text="*{createdAt}">writer</td>
+                <td>
+                    <button th:onclick="|javascript:fn_update(*{postId})|">수정</button>
+                    <button th:onclick="|javascript:fn_delete(*{postId})|">삭제</button>
+                </td>
+
             </tr>
     </tbody>
     </table> 
@@ -41,6 +57,9 @@ xmlns:th="http://www.thymeleaf.org">
         <a th:if="*{endPageNo}!=*{totalPages}" th:href="@{/posts/list(page=${paging.endPageNo+1})}">이후</a>
 
         <a th:if="${paging.pageNo}!=${paging.totalPages}" th:href="@{/posts/list(page=${paging.totalPages})}">끝</a>
+    </div>
+    <div>
+        <h3 th:text="${resultMsg}">message</h3>
     </div>
 </body>
 <script type="text/javascript"></script>

@@ -1,5 +1,6 @@
 package com.innilabs.board.mapper;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import com.innilabs.board.dto.Post;
@@ -17,7 +18,15 @@ public interface PostMapper {
 	List<Post> selectPagedPosts(@Param("startIndex") int startIndex, @Param("size") int size);
 
     @Select("SELECT COuNT(*) FROM post WHERE is_deleted=0")
-	int CountAllPosts();
+	int countAllPosts();
+
+	Post selectPostByPostId(int postId) throws SQLException;
+
+	int updatePostByPost(Post post) throws SQLException;
+
+	int deletePostByPostId(int postId) throws SQLException;
+
+	int insertPostByPost(Post post);
 
 
 }

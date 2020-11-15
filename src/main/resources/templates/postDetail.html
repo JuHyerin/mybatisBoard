@@ -8,6 +8,24 @@ xmlns:th="http://www.thymeleaf.org">
     <title>Document</title>
 </head>
 <body>
+    <table>
+        <thead>
+            <th>아이디</th>
+            <th>제목</th>
+            <th>내용</th>
+            <th>작성자</th>
+            <th>작성일</th>
+        </thead>    
+        <tbody>
+            <tr th:object="${post}">   
+                <td th:text="*{postId}">postId</td>
+                <td th:text="*{title}">title</td>
+                <td th:text="*{contents}">contents</td>
+                <td th:text="*{writer}">writer</td>
+                <td th:text="*{createdAt}">createdAt</td>
+            </tr>
+        </tbody>
+    </table> 
     
 </body>
 </html>

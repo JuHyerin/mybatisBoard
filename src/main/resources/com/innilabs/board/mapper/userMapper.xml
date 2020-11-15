@@ -3,12 +3,12 @@
    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
 <mapper namespace="com.innilabs.board.mapper.UserMapper"> 
-    <select id="selectUserById" parameterType="String" resultType="com.innilabs.board.dto.User">
+    <select id="selectUserByUserId" parameterType="com.innilabs.board.dto.User" resultType="com.innilabs.board.dto.User">
         SELECT 
             *
         FROM 
             USER
         WHERE
-            user_id = #{id}
+            user_id = #{userId}
     </select> 
 </mapper>

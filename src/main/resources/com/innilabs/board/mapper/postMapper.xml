@@ -24,4 +24,45 @@
 
    </select>
  
+   <select id="selectPostByPostId" parameterType="Integer" resultType="com.innilabs.board.dto.Post">
+      SELECT 
+            post_id, title, writer, contents, created_at
+      FROM
+            POST
+      WHERE
+            is_deleted = 0 
+      And
+            post_id = #{postId}
+
+   </select>
+
+   <update id="updatePostByPost" parameterType="com.innilabs.board.dto.Post">
+      UPDATE 
+            POST
+      SET
+            contents = #{contents},
+            updated_at = now()
+      WHERE
+            is_deleted = 0 
+      And
+            post_id = #{postId}
+
+   </update>
+
+   <update id="deletePostByPostId" parameterType="Integer">
+      UPDATE
+            POST
+      SET
+            is_deleted = 1
+      WHERE
+            post_id = #{postId} 
+   </update>
+   
+   <insert id="insertPostByPost" parameterType="com.innilabs.board.dto.Post">
+      INSERT INTO 
+            POST (title, contents, created_at, writer) 
+      VALUES 
+            (#{title}, #{contents}, now(), #{writer})     
+
+   </insert>
 </mapper>
