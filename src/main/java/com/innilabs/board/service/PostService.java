@@ -1,7 +1,9 @@
 package com.innilabs.board.service;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -20,13 +22,24 @@ public class PostService {
     @Autowired
     private PostMapper postMapper;
 
-    public int countAllPosts() {
-        return postMapper.countAllPosts();
-    }
+	public int countPosts(String option, String word) {
+		return postMapper.countPosts(option,word);
+		}
 
-    public List<Post> selectPagedPosts(int startIndex, int size) {
+    /* public List<Post> selectPagedPosts(int startIndex, int size) {
         return postMapper.selectPagedPosts(startIndex, size);
-    }
+    } */
+	public List<Post> selectPosts(String option, String word, int firstData, int pageSize) {
+		Map<String, String> stringParam = new HashMap<String, String>();
+		stringParam.put("option", option);
+		//stringParam.put("word", "%" + word + "%");
+		stringParam.put("word", word);
+		Map<String, Integer> integerParam = new HashMap<String, Integer>();
+		integerParam.put("firstData", firstData);
+		integerParam.put("pageSize", pageSize);
+
+		return postMapper.selectPosts(stringParam, integerParam);
+	}
 
     public Post selectPostByPostId(int postId) throws SQLException {
 		return postMapper.selectPostByPostId(postId);
@@ -49,4 +62,5 @@ public class PostService {
 		User user = (User) session.getAttribute("userInfo");
 		return user;
 	}
+
 }

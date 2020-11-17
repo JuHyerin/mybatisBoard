@@ -1,6 +1,7 @@
 package com.innilabs.board.controller;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.innilabs.board.dto.Login;
 import com.innilabs.board.dto.Post;
 import com.innilabs.board.dto.User;
 import com.innilabs.board.mapper.PostMapper;
@@ -34,15 +36,31 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    @GetMapping("/test")
-    public String test() {
-        return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    }
-
     @GetMapping("/list")
-    public String getAllPosts(@RequestParam(name = "page", required = false) String pageParam,
-            @RequestParam(name = "resultMsg", required = false) String resultMsg, Model model) {
-
+    public String getAllPosts(HttpServletRequest req,
+            @RequestParam(name = "page", required = false) String pageParam,
+            @RequestParam(name = "resultMsg", required = false) String resultMsg, Model model,
+            @RequestParam(name = "searchOption", required = false) String option, 
+            @RequestParam(name = "searchWord", required = false) String word
+            ) {
+        //로그인 여부 -> 로그인/로그아웃 출력
+        /*Login login = new Login();
+        login.setLoginURL("login");
+        login.setLoginCheck(false);
+        login.setLoginButtonMsg("로그인");*/
+        //String loginCheck = "login";
+        boolean loginCheck = false;
+        String welcome = "";
+        User selectedUser = postService.loginCheck(req);
+        if(selectedUser!=null){
+            /*login.setLoginURL("logout");
+            login.setLoginCheck(true);
+            login.setLoginButtonMsg("로그아웃");*/
+            //loginCheck = "logout";
+            loginCheck = true;
+            welcome = selectedUser.getUserId()+"사용중";
+        }
+        
         // page parameter 할당
         if (pageParam == null || pageParam.length() == 0 || pageParam.equals("0")) {
             pageParam = "1"; // 초기화
@@ -51,12 +69,23 @@ public class PostController {
 
         // paging객체생성
         PagingUtil paging = new PagingUtil(page, 3, 3); // 현재페이지의 페이징객체(Paging Bar)
-        paging.setTotalData(postService.countAllPosts());
-        List<Post> posts = postService.selectPagedPosts(paging.getFirstData(), paging.getPageSize()); // 페이징된 데이터
+        paging.setTotalData(postService.countPosts(option, word));
+        //List<Post> posts = postService.selectPagedPosts(paging.getFirstData(), paging.getPageSize()); // 페이징된 데이터
+        if(option == null){
+            option = "title";
+        }
+        if(word == null){
+            word = "";
+        }
+        List<Post> posts = postService.selectPosts(option, word, paging.getFirstData(), paging.getPageSize()); //검색된 데이터 페이징
 
         model.addAttribute("posts", posts);
         model.addAttribute("paging", paging);
         model.addAttribute("resultMsg", resultMsg);
+        //model.addAttribute("login", login);
+        model.addAttribute("loginCheck", loginCheck);
+        model.addAttribute("welcome", welcome);
+    
         return "postList";
     }
 
@@ -93,7 +122,6 @@ public class PostController {
                 resultPage = "createForm";
             }
         } catch (SQLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return resultPage;
@@ -117,7 +145,6 @@ public class PostController {
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         model.addAttribute("post", post);
@@ -157,12 +184,11 @@ public class PostController {
             }
             int resultCnt = postService.deletePostByPostId(postId);
         } catch (SQLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return resultPage;
     }
+    
 }

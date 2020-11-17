@@ -53,6 +53,11 @@ public class UserController {
         model.addAttribute("resultMsg", resultMsg);
         return resultPage;
     }
-    
-    
+
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest req){
+        HttpSession session = req.getSession(true);
+        session.invalidate();
+        return "redirect:/posts/list";
+    }
 }
