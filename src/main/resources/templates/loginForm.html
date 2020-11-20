@@ -6,23 +6,26 @@
 <script type="text/javascript"></script>
 </head>
 <body>
-    <form action="/users/login" accept-charset="utf-8" method="post">
+    <form th:action="@{/users/login}" accept-charset="utf-8" method="post">
         <p>
             <label>아이디</label>
-            <input type="text" name="userId">
+            <input type="text" name="userId" >
         </p>
         <p>
             <label>비밀번호</label>
-            <input type="password" name="password">
-            
+            <input type="password" name="password" >
         </p>
-        
+        <th:block th:if="${prevPage}!=null">
+            <input type="hidden" name="prevPage" th:value="${prevPage}"/>
+        </th:block>
         <p>
             <input type="submit" value="로그인">
         </p>
     </form>
+
     <div>
         <h3 th:text="${resultMsg}">message</h3>
     </div>
+
 </body>
 </html>

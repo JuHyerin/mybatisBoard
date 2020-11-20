@@ -1,33 +1,27 @@
 package com.innilabs.board.controller;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.innilabs.board.dto.Login;
-import com.innilabs.board.dto.Post;
-import com.innilabs.board.dto.User;
-import com.innilabs.board.mapper.PostMapper;
+import com.innilabs.board.dto.req.DetailReq;
+import com.innilabs.board.dto.req.ListReq;
+import com.innilabs.board.dto.res.ListRes;
+import com.innilabs.board.entity.Post;
+import com.innilabs.board.entity.User;
 import com.innilabs.board.service.PostService;
-import com.innilabs.board.util.PagingUtil;
+import com.innilabs.board.util.LoginUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 
 @Controller
 @RequestMapping("/posts")
@@ -35,76 +29,49 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class PostController {
     @Autowired
     private PostService postService;
+    /* @Autowired
+    private CommentService commentService; */
+
+    static final String LIST_PAGE = "redirect:/posts/list"; //final 상수 표현
 
     @GetMapping("/list")
-    public String getAllPosts(HttpServletRequest req,
-            @RequestParam(name = "page", required = false) String pageParam,
-            @RequestParam(name = "resultMsg", required = false) String resultMsg, Model model,
-            @RequestParam(name = "searchOption", required = false) String option, 
-            @RequestParam(name = "searchWord", required = false) String word
-            ) {
-        //로그인 여부 -> 로그인/로그아웃 출력
-        /*Login login = new Login();
-        login.setLoginURL("login");
-        login.setLoginCheck(false);
-        login.setLoginButtonMsg("로그인");*/
-        //String loginCheck = "login";
+    public String getAllPosts(HttpServletRequest req, Model model, ListReq listReq) {
+            
+        //로그인 여부 -> 로그인 || userId사용중 로그아웃 출력
         boolean loginCheck = false;
         String welcome = "";
-        User selectedUser = postService.loginCheck(req);
+        User selectedUser = LoginUtil.loginCheck(req);
         if(selectedUser!=null){
-            /*login.setLoginURL("logout");
-            login.setLoginCheck(true);
-            login.setLoginButtonMsg("로그아웃");*/
-            //loginCheck = "logout";
             loginCheck = true;
             welcome = selectedUser.getUserId()+"사용중";
         }
-        
-        // page parameter 할당
-        if (pageParam == null || pageParam.length() == 0 || pageParam.equals("0")) {
-            pageParam = "1"; // 초기화
-        }
-        int page = Integer.parseInt(pageParam);
 
-        // paging객체생성
-        PagingUtil paging = new PagingUtil(page, 3, 3); // 현재페이지의 페이징객체(Paging Bar)
-        paging.setTotalData(postService.countPosts(option, word));
-        //List<Post> posts = postService.selectPagedPosts(paging.getFirstData(), paging.getPageSize()); // 페이징된 데이터
-        if(option == null){
-            option = "title";
-        }
-        if(word == null){
-            word = "";
-        }
-        List<Post> posts = postService.selectPosts(option, word, paging.getFirstData(), paging.getPageSize()); //검색된 데이터 페이징
-
-        model.addAttribute("posts", posts);
-        model.addAttribute("paging", paging);
-        model.addAttribute("resultMsg", resultMsg);
-        //model.addAttribute("login", login);
-        model.addAttribute("loginCheck", loginCheck);
-        model.addAttribute("welcome", welcome);
-    
+        ListRes lr = postService.listPosts(listReq);
+        System.out.println(listReq);
+        ListRes listRes = ListRes.builder()
+                                .posts(lr.getPosts())
+                                .paging(lr.getPaging())
+                                .loginCheck(loginCheck)
+                                .welcome(welcome)
+                                .option(listReq.getOption())
+                                .word(listReq.getWord())
+                                .build();
+        model.addAttribute("listRes", listRes);        
         return "postList";
     }
 
+    
     @GetMapping("/detail")
-    public String detailPost(@RequestParam(name = "postId", required = true) int postId, Model model) {
-        Post post = null;
-        try {
-            post = postService.selectPostByPostId(postId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return "error";
-        }
-        model.addAttribute("post", post);
+    public String detailPost(Model model, DetailReq detailReq){
+                           
+        model.addAttribute("detailRes", postService.detailPost(detailReq));
+       
         return "postDetail";
     }
 
     @GetMapping("/create")
     public String goCreateForm(Model model, HttpServletRequest req) {
-        if (postService.loginCheck(req) == null) {
+        if (LoginUtil.loginCheck(req) == null) {
             model.addAttribute("resultMsg", "로그인 후 이용");
             return "loginForm";
         }
@@ -112,83 +79,63 @@ public class PostController {
     }
 
     @PostMapping("/create")
-    public String createPost(@ModelAttribute Post post, HttpServletRequest req) {
-        String resultPage = "redirect:/posts/list";
-        User user = postService.loginCheck(req);
-        try {
-            post.setWriter(user.getUserId());
-            int resultCnt = postService.createPostByPost(post);
-            if (resultCnt < 1) {
-                resultPage = "createForm";
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public String createPost(Post post, HttpServletRequest req) {
+        
+        if (postService.createPost(post, req) < 1) {
+            return "createForm";
         }
-        return resultPage;
+        return LIST_PAGE;
     }
 
     @GetMapping("/update")
-    public String goUpdateForm(@RequestParam int postId, Model model, HttpServletRequest req) {
-        User user = postService.loginCheck(req);
+    public String goUpdateForm(int postId, Model model, HttpServletRequest req) {
+        User user = LoginUtil.loginCheck(req);
 
-        Post post=null;
-        try {
-            post = postService.selectPostByPostId(postId); //기존 내용 input에 미리 넣어줘야함
-            if(user==null ){
-                model.addAttribute("resultMsg", "로그인후 이용");
-                return "loginForm";
-            }else if(post.getWriter().equals(user.getUserId()) == false){
-                //model.addAttribute("resultMsg", "본인만 수정 가능");
-                String encodedParam = URLEncoder.encode("본인만 수정 가능", "UTF-8");
-                return "redirect:/posts/list?resultMsg="+encodedParam;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        Post existPost = postService.selectPostByPostId(postId); //기존 내용 input에 미리 넣어줘야함
+            
+        if(user==null){
+            model.addAttribute("resultMsg", "로그인후 이용");
+            return "loginForm";
+            
+        }else if(!existPost.getWriter().equals(user.getUserId())){
+                
+            //String encodedParam = URLEncoder.encode("본인만 수정 가능", "UTF-8");
+            //return "redirect:/posts/list?resultMsg="+encodedParam;
+            //model.addAttribute("resultMsg", "본인만 수정 가능");
+            return LIST_PAGE+"?resultMsg="+"onlywriter";
         }
-        model.addAttribute("post", post);
+        
+        model.addAttribute("existPost", existPost);
         return "updateForm";
     }
     
     @PostMapping("/update")
-    public String updatePost(@ModelAttribute Post post, Model model){
-        String resultPage= "redirect:/posts/list";
-        try {
-            int resultCnt = postService.updatePostByPost(post);
-            if(resultCnt<1){
-                resultPage = "updateForm";
-            }
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public String updatePost(Post updatedPost, Model model){
+
+        int resultCnt = postService.updatePost(updatedPost);
+        if(resultCnt<1){
+            return "updateForm";
         }
-        return resultPage;
+        return LIST_PAGE;
     }
+
     @GetMapping("/delete")
-    public String deletePost(@RequestParam int postId, Model model, HttpServletRequest req) {
-        User user = postService.loginCheck(req);
-        
-        String resultPage= "redirect:/posts/list";
-        
-        Post post=null;
-        try {
-            post = postService.selectPostByPostId(postId);//본인여부를 확인하기 위한 해당 게시물의 작성자 조회해옴
-            if(user==null ){
-                model.addAttribute("resultMsg", "로그인후 이용");
-                return "loginForm";
-            }else if(!post.getWriter().equals(user.getUserId())){
-                //model.addAttribute("resultMsg", "본인만 수정 가능");
-                String encodedParam = URLEncoder.encode("본인만 수정 가능", "UTF-8");
-                return resultPage+"?resultMsg="+encodedParam;
-            }
-            int resultCnt = postService.deletePostByPostId(postId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+    public String deletePost(int postId, Model model, HttpServletRequest req) {
+        User user = LoginUtil.loginCheck(req);
+
+        if(user==null ){//회원 여부
+            model.addAttribute("resultMsg", "로그인후 이용");
+            return "loginForm";
         }
-        return resultPage;
+        else if(!postService.getWriter(postId).equals(user.getUserId())){//본인여부
+            model.addAttribute("resultMsg", "본인만 수정 가능");
+            //String encodedParam = URLEncoder.encode("본인만 수정 가능", "UTF-8");
+            //return resultPage+"?resultMsg="+encodedParam;
+            return LIST_PAGE;
+        }
+
+        postService.deletePost(postId);
+        return LIST_PAGE;
     }
     
 }

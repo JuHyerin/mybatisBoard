@@ -6,26 +6,96 @@ xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+<script>
+    function fn_update(commentId){
+        location.href='/comments/update?commentId='+commentId;
+    }
+    function fn_delete(commentId){
+        location.href='/comments/delete?commentId='+commentId;
+    }
+    function fn_create(){
+        location.href='/comments/create';
+    }
+</script>
 </head>
 <body>
-    <table border="1">
-        <thead>
-            <th>아이디</th>
-            <th>제목</th>
-            <th>내용</th>
-            <th>작성자</th>
-            <th>작성일</th>
-        </thead>    
-        <tbody>
-            <tr th:object="${post}">   
-                <td th:text="*{postId}">postId</td>
-                <td th:text="*{title}">title</td>
-                <td th:text="*{contents}">contents</td>
-                <td th:text="*{writer}">writer</td>
-                <td th:text="*{createdAt}">createdAt</td>
-            </tr>
-        </tbody>
+    <table border="1" th:object="${detailRes.post}">
+        <tr>   
+            <td>번호</td>
+            <td th:text="*{postId}">postId</td>
+        </tr>
+        <tr>
+            <td>제목</td>
+            <td th:text="*{title}">title</td>
+        </tr>
+        <tr>
+            <td>내용</td>
+            <td th:text="*{contents}">contents</td>
+        </tr>
+        <tr>
+            <td>작성자</td>
+            <td th:text="*{writer}">writer</td>
+        </tr>
+        <tr>
+            <td>작성일</td>
+            <td th:text="*{createdAt}">createdAt</td>
+        </tr>
     </table> 
+
+<br>
+
+    <div>
+        <div>
+            <strong>댓글작성</strong>
+            <form th:action="@{/comments/create}" method="post" name="createReq">
+                <input type="text" name="comment" placeholder="댓글을 입력하세요.">
+                <input type="hidden" name="postId" th:value="${param.postId}">
+                
+                <input th:if="${session.userInfo}!=null" type="hidden" name="commentWriter" th:value="${session.userInfo.userId}">
+            
+                <input type="submit" value="등록">	
+            </form>
+        </div>
+
+<br>
+
+        <div>
+            <strong>댓글목록</strong><br>
+            <th:block th:each="comment:${detailRes.post.comments}" th:object="${comment}">
+                <div>
+                    <label th:text="*{commentWriter}">작성자</label><br>
+                    <label th:text="*{commentCreatedAt}">작성일</label><br>
+                    <label th:text="*{comment}">내용</label>
+                    <!-- <button th:onclick="|javascript:fn_update(*{commentId})|">수정</button>
+                    <button th:onclick="|javascript:fn_delete(*{commentId})|">삭제</button> -->
+                </div>
+                <br>
+            </th:block>
+        </div>
+
+        <div th:with="start=${detailRes.paging.startPageNo}, end=${detailRes.paging.endPageNo}" th:object="${detailRes.paging}">
+            <a th:if="${detailRes.paging.pageNo}>1" 
+                th:href="@{/posts/detail(pageParam=1,postId=${param.postId})}">
+                처음</a>
+             
+            <a th:if="${detailRes.paging.startPageNo}!=1" 
+                th:href="@{/posts/detail(pageParam=${detailRes.paging.startPageNo-1},postId=${param.postId})}">
+                이전</a>
     
+            <th:block th:each="page:${#numbers.sequence(start, end)}">
+                <a th:text="${page}" 
+                th:href="@{/posts/detail(pageParam=${page},postId=${param.postId})}">
+                pageNo</a>
+            </th:block> 
+    
+            <a th:if="*{endPageNo}!=*{totalPages}" 
+                th:href="@{/posts/detail(pageParam=${detailRes.paging.endPageNo+1},postId=${param.postId})}"> 
+                이후</a>
+    
+            <a th:if="${detailRes.paging.pageNo}!=${detailRes.paging.totalPages}" 
+                th:href="@{/posts/detail(pageParam=${detailRes.paging.totalPages},postId=${param.postId})}">
+                끝</a>
+        </div>
+    </div>
 </body>
 </html>

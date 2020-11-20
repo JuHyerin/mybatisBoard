@@ -5,47 +5,37 @@ xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Post List</title>
-    <script>
-        function fn_detail(postId){
-            location.href='/posts/detail?postId='+postId;
-        }
-        function fn_update(postId){
-           location.href='/posts/update?postId='+postId;
-        }
-        function fn_delete(postId){
-            location.href='/posts/delete?postId='+postId;
-        }
-        function fn_create(){
-            location.href='/posts/create';
-        }
-        /*function fn_login(loginCheck){
-            if(!loginCheck){
-                location.href='/users/login';
-            }else{
-                location.href='/users/logout';
-
-            }
-        }*/
-
-    
-    </script>
+<script>
+    function fn_detail(postId){
+        location.href='/posts/detail?postId='+postId;
+    }
+    function fn_update(postId){
+        location.href='/posts/update?postId='+postId;
+    }
+    function fn_delete(postId){
+        location.href='/posts/delete?postId='+postId;
+    }
+    function fn_create(){
+        location.href='/posts/create';
+    }
+</script>
 </head>
 <body>
     <div>
-        <form action="/posts/list" method="GET">
-            <select name="searchOption">
-                <option value="title" selected>제목</option>
-                <option value="writer">작성자</option>
+        <form action="/posts/list" method="GET" th:object="${listReq}">
+            <select th:field="*{option}">
+                <option th:value="title" selected>제목</option>
+                <option th:value="writer">작성자</option>
             </select>
-            <input type="text" name="searchWord" th:value=${param.searchWord}>
+            <input type="text" th:field="*{word}" th:value=${listRes.word}>
             <input type="submit" value="검색">
         </form>
     </div>
 
-    <div th:object="${login}">
-        <th:block th:text="${welcome}">하이</th:block>
-        <a th:if="${loginCheck}" th:href="@{/users/logout}">로그아웃</a>
-        <a th:unless="${loginCheck}" th:href="@{/users/login}">로그인</a>
+    <div th:object="${listRes}">
+        <th:block th:text="*{welcome}">하이</th:block>
+        <a th:if="*{loginCheck}" th:href="@{/users/logout}">로그아웃</a>
+        <a th:unless="*{loginCheck}" th:href="@{/users/login}">로그인</a>
     </div>
 
     <div>
@@ -57,16 +47,14 @@ xmlns:th="http://www.thymeleaf.org">
                 <th>수정 및 삭제</th>
             </thead>    
             <tbody>
-                <!-- <tr style="cursor:pointer"  th:onclick="|javascript:location.href=@{'/posts/detail'}|" th:each="post:${posts}" th:object="${post}"> -->
-                    <tr style="cursor:pointer" th:each="post:${posts}" th:object="${post}">   
+                <tr style="cursor:pointer" th:each="post:${listRes.posts}" th:object="${post}">   
                     <td th:text="*{postId}">postId</td>
                     <td th:onclick="|javascript:fn_detail(*{postId})|" th:text="*{title}">title</td>
-                    <td th:text="*{createdAt}">writer</td>
+                    <td th:text="*{createdAt}">createdAt</td>
                     <td>
                         <button th:onclick="|javascript:fn_update(*{postId})|">수정</button>
                         <button th:onclick="|javascript:fn_delete(*{postId})|">삭제</button>
                     </td>
-
                 </tr>
         </tbody>
         </table> 
@@ -76,30 +64,34 @@ xmlns:th="http://www.thymeleaf.org">
         <button th:onclick="|javascript:fn_create()|">게시물 작성</button>
     </div>
 
-    <div th:with="start=${paging.startPageNo}, end=${paging.endPageNo}" th:object="${paging}">
-        <a th:if="${paging.pageNo}>1" 
-            th:href="@{/posts/list(page=1,searchOption=${param.searchOption},searchWord=${param.searchWord})}">
-            처음</a>
+    <div th:object="${listReq}"
+        th:with="present=${listRes.paging.pageNo}, start=${listRes.paging.startPageNo}, 
+                end=${listRes.paging.endPageNo}, total=${listRes.paging.totalPages}">
+        <a th:if="${listRes.paging.pageNo} > 1" 
+            th:href="@{/posts/list(option=${param.option},word=${param.word})}">
+        처음</a> 
          
-        <a th:if="${paging.startPageNo}!=1" 
-            th:href="@{/posts/list(page=${paging.startPageNo-1},searchOption=${param.searchOption},searchWord=${param.searchWord})}">
-            이전</a>
+        <a th:if="start!=1" 
+            th:href="@{/posts/list(pageParam=${listRes.paging.startPageNo-1},option=${param.option},word=${param.word})}">
+        이전</a>
 
         <th:block th:each="page:${#numbers.sequence(start, end)}">
             <a th:text="${page}" 
-            th:href="@{/posts/list(page=${page},,searchOption=${param.searchOption},searchWord=${param.searchWord})}">
-            pageNo</a>
+                th:href="@{/posts/list(pageParam=${page},option=${param.option},word=${param.word})}">
+             pageNo</a>
         </th:block> 
 
-        <a th:if="*{endPageNo}!=*{totalPages}" th:href="@{/posts/list(page=${paging.endPageNo+1},searchOption=${option},searchWord=${word})}">이후</a>
+        <a th:if="end!=total" 
+            th:href="@{/posts/list(pageParam=${listRes.paging.endPageNo+1},option=${param.option},word=${param.word})}">
+        이후</a>
 
-        <a th:if="${paging.pageNo}!=${paging.totalPages}" 
-            th:href="@{/posts/list(page=${paging.totalPages},,searchOption=${param.searchOption},searchWord=${param.searchWord})}">
-            끝</a>
+        <a th:if="present!=total"
+            th:href="@{/posts/list(pageParam=${listRes.paging.totalPages},option=${param.option},word=${param.word})}">
+        끝</a>
     </div>
     <div>
         <h3 th:text="${resultMsg}">message</h3>
-    </div>
+        <h3 th:text="${param.resultMsg}">message</h3>
+    </div> 
 </body>
-<script type="text/javascript"></script>
 </html>

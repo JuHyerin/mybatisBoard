@@ -3,7 +3,9 @@ package com.innilabs.board.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.innilabs.board.dto.User;
+import com.innilabs.board.dto.req.LoginReq;
+import com.innilabs.board.dto.res.LoginRes;
+import com.innilabs.board.entity.User;
 import com.innilabs.board.mapper.UserMapper;
 import com.innilabs.board.service.UserService;
 
@@ -31,27 +33,14 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(@ModelAttribute User user, Model model, HttpServletRequest req){
-        String resultPage="";
-        String resultMsg="";
-        User selectedUser = userService.getUserByUserId(user);
-        if(selectedUser!=null){
-            if(user.getPassword().equals(selectedUser.getPassword())){
-                resultPage = "redirect:/posts/list";
-                HttpSession session = req.getSession(true);
-                session.setAttribute("userInfo", selectedUser);
-            }
-            else{
-                resultPage = "loginForm";
-                resultMsg = "비밀번호 일치 안함";
-            }
-        }
-        else{
-            resultPage = "loginForm";
-                resultMsg = "아이디 존재 안함";
-        }
-        model.addAttribute("resultMsg", resultMsg);
-        return resultPage;
+    public String login(LoginReq loginReq , Model model, HttpServletRequest req){
+       
+        LoginRes loginRes = userService.login(loginReq,req);
+        
+        model.addAttribute("resultMsg", loginRes.getResultMsg());
+        model.addAttribute("prevPage", loginRes.getPrevPage());
+        //model.addAttribute("loginRes", loginRes);
+        return loginRes.getResultPage();
     }
 
     @GetMapping("/logout")

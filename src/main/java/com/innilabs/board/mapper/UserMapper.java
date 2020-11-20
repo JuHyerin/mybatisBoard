@@ -1,6 +1,6 @@
 package com.innilabs.board.mapper;
 
-import com.innilabs.board.dto.User;
+import com.innilabs.board.entity.User;
 
 import org.apache.ibatis.annotations.Mapper;
 //import org.apache.ibatis.annotations.Select;
@@ -10,5 +10,5 @@ public interface UserMapper {
     //@Select("SELECT * FROM USER WHERE id=#{id}")
     //public User selectUserById(String id);
 
-	public User selectUserByUserId(User user);
+	public User selectUserByUserId(String string);
 }

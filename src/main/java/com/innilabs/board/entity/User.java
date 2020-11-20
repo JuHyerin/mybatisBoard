@@ -1,4 +1,4 @@
-package com.innilabs.board.dto;
+package com.innilabs.board.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

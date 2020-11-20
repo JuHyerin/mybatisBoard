@@ -3,8 +3,47 @@
    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
    
-<mapper namespace="com.innilabs.board.mapper.PostMapper"> 
+<mapper namespace="com.innilabs.board.mapper.PostMapper">
+
       
+     <!--  <resultMap id="postResult" type="Post">
+            <id property="postId" column="post_id" />
+            <result property="title" column="title" />
+            <result property="writer" column="writer" />
+            <result property="contents" column="contents"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="updatedAt" column="updated_at"/>
+            <result property="deletedAt" column="deleted_at"/>
+            <result property="isDeleted" column="is_deleted"/>
+            <collection property="comments" javaType="List" ofType="Comment">
+                  <id property="commentId" column="comment_id" />
+                  <result property="writer" column="comment_writer" />
+                  <result property="createdAt" column="comment_created_at"/>
+                  <result property="updatedAt" column="comment_updated_at"/>
+                  <result property="deletedAt" column="comment_deleted_at"/>
+                  <result property="isDeleted" column="comment_is_deleted"/>
+                  <result property="comment" column="comment"/> 
+            </collection>
+      </resultMap>
+      <select id="selectPostWithComments" parameterType="Integer" resultMap="postResult">
+            SELECT 
+                  P.post_id, P.title, P.writer, P.contents, P.created_at, P.is_deleted,
+                  C.comment_id, C.comment_writer, C.comment, C.comment_created_at, C.comment_is_deleted
+            FROM
+                  POST P
+            JOIN
+                  COMMENT C 
+            ON
+                  P.post_id = C.post_id
+            WHERE
+                  P.post_id = #{postId}
+            AND      
+                  P.is_deleted = 0
+            AND
+                  C.comment_is_deleted = 0 
+      </select> -->
+      
+
       <select id="countPosts" parameterType="String" resultType="Integer">
             SELECT 
                   COUNT(*)
@@ -19,40 +58,27 @@
                   AND title LIKE CONCAT('%', #{word}, '%')
             </if>
       </select>
-      
-      <select id="selectPagedPosts" parameterType="Integer" resultType="com.innilabs.board.dto.Post">
-            SELECT 
-                  post_id, title, writer, contents, created_at
-            FROM
-                  POST
-            WHERE
-                  is_deleted = 0
-            ORDER BY 
-                  created_at DESC
-            LIMIT
-                  #{startIndex}, #{size}
-      </select>
    
-      <select id="selectPosts" parameterType="Map" resultType="com.innilabs.board.dto.Post">
+      <select id="selectPosts" parameterType="com.innilabs.board.dto.req.ListReq" resultType="Post">
             SELECT 
                   post_id, title, writer, contents, created_at
             FROM 
                   POST
             WHERE
                   is_deleted = 0
-            <if test='"writer".equals(stringParam.option)'>
-                  AND writer LIKE CONCAT('%', #{stringParam.word}, '%')
+            <if test='"writer".equals(option)'>
+                  AND writer LIKE CONCAT('%', #{word}, '%')
             </if>
-            <if test='"title".equals(stringParam.option)'>
-                  AND title LIKE CONCAT('%', #{stringParam.word}, '%')
+            <if test='"title".equals(option)'>
+                  AND title LIKE CONCAT('%', #{word}, '%')
             </if>
             ORDER BY 
                   created_at DESC
             LIMIT
-                  #{integerParam.firstData}, #{integerParam.pageSize}
+                  #{startIndex}, #{pageSize}
       </select>
     
-      <select id="selectPostByPostId" parameterType="Integer" resultType="com.innilabs.board.dto.Post">
+      <select id="selectPostByPostId" parameterType="Integer" resultType="Post">
             SELECT 
                   post_id, title, writer, contents, created_at
             FROM
@@ -63,7 +89,18 @@
                   post_id = #{postId}
       </select>
 
-      <update id="updatePostByPost" parameterType="com.innilabs.board.dto.Post">
+      
+
+      <select id="countCommentsByPostId" parameterType="Integer" resultType="Integer">
+            SELECT
+                  COUNT(*)
+            FROM
+                  COMMENT 
+            WHERE
+                  post_id = #{postId}
+        </select>
+    
+      <update id="updatePostByPost" parameterType="Post">
             UPDATE 
                   POST
             SET
@@ -75,19 +112,46 @@
                   post_id = #{postId}
       </update>
 
+      
+      <select id="selectWriterByPostId" parameterType="Integer" resultType="String">
+            SELECT 
+                  writer
+            FROM
+                  POST
+            WHERE
+                  post_id = #{postId}
+      </select>
+
       <update id="deletePostByPostId" parameterType="Integer">
             UPDATE
                   POST
             SET
-                  is_deleted = 1
+                  is_deleted = 1,
+                  deleted_at = now()
             WHERE
                   post_id = #{postId} 
       </update>
 
-      <insert id="insertPostByPost" parameterType="com.innilabs.board.dto.Post">
+      <insert id="insertPostByPost" parameterType="Post">
             INSERT INTO 
                   POST (title, contents, created_at, writer) 
             VALUES 
                   (#{title}, #{contents}, now(), #{writer})     
       </insert>
+
+
+      <select id="getCommentsByPostId" parameterType="Integer" resultType="Comment">
+            SELECT
+                comment_id, comment_writer, comment_created_at, comment
+            FROM
+                COMMENT
+            WHERE
+                comment_is_deleted = 0
+            AND
+                post_id = #{postId}
+            ORDER BY 
+                comment_created_at DESC
+            LIMIT
+                #{startIndex}, #{size}
+        </select>
 </mapper>
