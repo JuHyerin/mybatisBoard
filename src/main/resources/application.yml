@@ -17,5 +17,5 @@ mybatis:
   config-location: classpath:mybatis-config.xml
 
 logging:
-  level.root: info
+  level.root: error
     

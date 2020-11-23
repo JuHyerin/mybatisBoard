@@ -1,5 +1,7 @@
 package com.innilabs.board.mapper;
 
+import java.util.Optional;
+
 import com.innilabs.board.entity.User;
 
 import org.apache.ibatis.annotations.Mapper;

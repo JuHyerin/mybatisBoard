@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(LoginReq loginReq , Model model, HttpServletRequest req){
+    public String login(LoginReq loginReq , Model model, HttpServletRequest req) throws Exception {
        
         LoginRes loginRes = userService.login(loginReq,req);
         

@@ -16,6 +16,7 @@ import com.innilabs.board.dto.res.ListRes;
 import com.innilabs.board.entity.Comment;
 import com.innilabs.board.entity.Post;
 import com.innilabs.board.entity.User;
+import com.innilabs.board.exception.BoardException;
 import com.innilabs.board.mapper.PostMapper;
 import com.innilabs.board.util.LoginUtil;
 import com.innilabs.board.util.PagingUtil;
@@ -25,16 +26,23 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @MapperScan(basePackages = "com.innilabs.board.mapper")
 @Slf4j
+@RequiredArgsConstructor
 public class PostService {
-    @Autowired
-    private PostMapper postMapper;
+    
+    final PostMapper postMapper;
 
-	public ListRes listPosts(ListReq listReq){
+	static final String LIST_PAGE = "redirect:/posts/list";
+	
+	final static int PAGE_SIZE = 3;
+	final static int BLOCK_SIZE = 2;	
+
+	public ListRes listPosts(ListReq listReq, String welcome) throws Exception {
 
 		// page parameter 초기화
         if (listReq.getPageParam() == null || listReq.getPageParam() == 0) {
@@ -55,47 +63,49 @@ public class PostService {
 		listReq.setPageSize(paging.getPageSize());
 
         List<Post> posts = postMapper.selectPosts(listReq); //검색된 데이터 페이징
-
+		if(posts.size()==0){ //view에서 다시 처리하기 , 예외 ㄴㄴ
+			throw new SQLException();
+		}
 		//응답 객체 생성하여 반환
 		return ListRes
 					.builder()
 					.posts(posts)
 					.paging(paging)
+					.option(option)
+					.word(word)
+					.welcome(welcome)
+					.loginCheck(welcome.equals("")?false:true)
 					.build();
 	}
 	
 
-    public Post selectPostByPostId(int postId){
-		try {
-			return postMapper.selectPostByPostId(postId);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			log.error("createPost", e);
-			return null;
-		}
+    public Post selectPostByPostId(int postId) throws SQLException {
+		
+		return postMapper.selectPostByPostId(postId);
+		
 	}
 
-	public DetailRes detailPost(DetailReq detailReq)  {
+	public DetailRes detailPost(DetailReq detailReq) throws SQLException {
 		Post post = null;
 		//page parameter 초기화
         if (detailReq.getPageParam() == null || detailReq.getPageParam() == 0) {
         	detailReq.setPageParam(1);
         }
 
+		//함수로 빼기
         // 댓글 paging
-        PagingUtil paging = new PagingUtil(detailReq.getPageParam(), 3, 2);
+        PagingUtil paging = new PagingUtil(detailReq.getPageParam(), PAGE_SIZE, BLOCK_SIZE);//상수는 final static
 		paging.setTotalData(postMapper.countCommentsByPostId(detailReq.getPostId()));
+		//left join으로 하기
 		List<Comment> comments = postMapper.getCommentsByPostId(detailReq.getPostId(), paging.getFirstData(), paging.getPageSize());
 
-		try {
-			post = postMapper.selectPostByPostId(detailReq.getPostId());
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		post = postMapper.selectPostByPostId(detailReq.getPostId());
+		if(post==null){
+			throw new SQLException();
 		}
 		post.setComments(comments);
 		//post = postMapper.selectPostWithComments(detailReq.getPostId());
-		System.out.println(post);
+		//System.out.println(post);
         
 		return DetailRes
 					.builder()
@@ -103,6 +113,8 @@ public class PostService {
 					.paging(paging)
 					.build();
 	}
+
+	//사용자에게 문제 인지
 	public int updatePost(Post post){
 		try {
 			return postMapper.updatePostByPost(post);
@@ -111,18 +123,18 @@ public class PostService {
 			return 0;
 		}
 	}
-
-	public int deletePost(int postId){
+	//사용자에게 문제 인지
+	public int deletePost(int postId) throws BoardException {
 		try {
 			return postMapper.deletePostByPostId(postId);
 		} catch (SQLException e) {
 			log.error("deletePost", e);
-			return 0;
+			throw new BoardException("삭제실패", LIST_PAGE); //custom exception 하면 다 처리 ㄱㄴ
 		}
 	}
 
-	public int createPost(Post post, HttpServletRequest req) {
-		User user = LoginUtil.loginCheck(req);
+	public int createPost(Post post, User user) {//param으로 User 넘기기, req ㄴㄴ
+		
 		post.setWriter(user.getUserId());
 		
 		return postMapper.insertPostByPost(post);
@@ -134,5 +146,6 @@ public class PostService {
 	public String getWriter(int postId) {
 		return postMapper.selectWriterByPostId(postId);
 	}
+
 
 }

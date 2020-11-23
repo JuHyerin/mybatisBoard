@@ -11,8 +11,10 @@ import lombok.Setter;
 public class ListReq {
     private Integer pageParam;//null 체크
     private int startIndex;
+    
     private int pageSize;
     //private String resultMsg;
+    
     private String option;
     private String word;
 

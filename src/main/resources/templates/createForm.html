@@ -6,7 +6,6 @@
     <title>Document</title>
 </head>
 <body>
-    
 <form action="/posts/create" accept-charset="utf-8" method="POST" name="post">
 	<p>
 		<label>제목</label>
@@ -16,10 +15,25 @@
 		<label>내용</label>
 		<input type="text" name="contents" placeholder="내용입력">
 	</p>
-	
+		<input type="hidden" name="writer" th:value="${session.userInfo.userId}"/>
 	<p>
 		<input type="submit" value="등록">
 	</p>
-</form>
+</form> 
+
+<!-- <form action="/posts/create" accept-charset="utf-8" method="POST" th:object="${post}">
+	<p>
+		<label>제목</label>
+		<input type="text" th:field="title" placeholder="제목입력">
+	</p>
+	<p>
+		<label>내용</label>
+		<input type="text" th:field="${contents}" placeholder="내용입력">
+	</p>
+		<input type="hidden" th:field="${writer" th:value="${session.userInfo}"/>
+	<p>
+		<input type="submit" value="등록">
+	</p>
+</form> -->
 </body>
 </html>

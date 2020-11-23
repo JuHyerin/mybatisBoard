@@ -9,7 +9,7 @@
      <!--  <resultMap id="postResult" type="Post">
             <id property="postId" column="post_id" />
             <result property="title" column="title" />
-            <result property="writer" column="writer" />
+            <result property="pwriter" column="pwriter" />
             <result property="contents" column="contents"/>
             <result property="createdAt" column="created_at"/>
             <result property="updatedAt" column="updated_at"/>
@@ -27,11 +27,11 @@
       </resultMap>
       <select id="selectPostWithComments" parameterType="Integer" resultMap="postResult">
             SELECT 
-                  P.post_id, P.title, P.writer, P.contents, P.created_at, P.is_deleted,
-                  C.comment_id, C.comment_writer, C.comment, C.comment_created_at, C.comment_is_deleted
+                  P.post_id, P.title, P.writer as pwriter, P.contents, P.created_at, P.is_deleted,
+                  C.comment_id, C.comment_writer as cwriter, C.comment, C.comment_created_at, C.comment_is_deleted
             FROM
                   POST P
-            JOIN
+            LEFT JOIN
                   COMMENT C 
             ON
                   P.post_id = C.post_id
@@ -69,7 +69,7 @@
             <if test='"writer".equals(option)'>
                   AND writer LIKE CONCAT('%', #{word}, '%')
             </if>
-            <if test='"title".equals(option)'>
+            <if test='"title"==option'>
                   AND title LIKE CONCAT('%', #{word}, '%')
             </if>
             ORDER BY 
